@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Local report source and generated figures
+extras/
+
+# Downloaded third-party credit data
+credit_risk/loan_dataset_investor.xlsx
