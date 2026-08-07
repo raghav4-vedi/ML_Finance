@@ -199,18 +199,60 @@ def prepare_forecasts(predictions):
 
 
 def draw_figure(results):
-    test = results.loc[
-        (results["period"] == "test") & (results["percentile"] == 0.99)
-    ].set_index("model")
+    test = results.loc[results["period"] == "test"]
     order = ["historical", "gradient_boosting"]
     labels = ["Historical percentile", "Gradient boosting"]
-    fig, ax = plt.subplots(figsize=(6.4, 4.0))
-    bars = ax.bar(labels, test.loc[order, "exceptions"], color=["0.55", "#0072B2"])
-    ax.bar_label(bars)
-    ax.axhline(test["expected_exceptions"].iloc[0], color="black", linestyle="--")
-    ax.set_ylabel("99% forecast exceptions")
-    ax.set_title("German ten-year yield, test period")
-    fig.tight_layout()
+    colours = ["0.55", "#0072B2"]
+    percentile_labels = ["97.5%", "99%"]
+    positions = np.arange(len(PERCENTILES))
+    width = 0.34
+
+    fig, axes = plt.subplots(1, 2, figsize=(8.2, 3.7), layout="constrained")
+
+    for index, (model, label, colour) in enumerate(zip(order, labels, colours)):
+        model_rows = test.loc[test["model"] == model].set_index("percentile")
+        offset = (index - 0.5) * width
+        exception_bars = axes[0].bar(
+            positions + offset,
+            model_rows.loc[list(PERCENTILES), "exceptions"],
+            width,
+            label=label,
+            color=colour,
+        )
+        axes[0].bar_label(exception_bars, padding=2, fontsize=9)
+
+        loss_bars = axes[1].bar(
+            positions + offset,
+            model_rows.loc[list(PERCENTILES), "quantile_loss"],
+            width,
+            label=label,
+            color=colour,
+        )
+        axes[1].bar_label(loss_bars, fmt="%.3f", padding=2, fontsize=9)
+
+    expected = (
+        test.loc[test["model"] == "historical"]
+        .set_index("percentile")
+        .loc[list(PERCENTILES), "expected_exceptions"]
+    )
+    axes[0].scatter(
+        positions,
+        expected,
+        marker="D",
+        color="black",
+        s=28,
+        label="Expected",
+        zorder=3,
+    )
+    axes[0].set_xticks(positions, percentile_labels)
+    axes[0].set_ylabel("Number of exceptions")
+    axes[0].set_title("(a) Test exceptions")
+    axes[0].legend(frameon=False, fontsize=9)
+
+    axes[1].set_xticks(positions, percentile_labels)
+    axes[1].set_ylabel("Mean quantile loss (basis points)")
+    axes[1].set_title("(b) Test quantile loss")
+
     fig.savefig(FIGURE_FILE)
     plt.close(fig)
 

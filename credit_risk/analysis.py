@@ -8,6 +8,7 @@ from urllib.request import urlretrieve
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.ticker import PercentFormatter
 from openpyxl import load_workbook
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -303,55 +304,78 @@ def draw_figure(metrics, calibration):
     }
     risk_groups = calibration.loc[calibration["check"] == "Risk group"]
     countries = calibration.loc[calibration["check"] == "Country"]
+    ranking = test_metrics.loc[order].sort_values("roc_auc")
 
-    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.0))
+    fig, axes = plt.subplot_mosaic(
+        [["ranking", "ranking"], ["risk", "country"]],
+        figsize=(8.2, 7.0),
+        gridspec_kw={"height_ratios": [0.85, 1.15]},
+        layout="constrained",
+    )
 
-    axes[0].barh(
-        [short_names[name] for name in order],
-        test_metrics.loc[order, "roc_auc"],
+    ranking_bars = axes["ranking"].barh(
+        [short_names[name] for name in ranking.index],
+        ranking["roc_auc"],
         color="#4472C4",
     )
-    axes[0].set_title("Model ranking")
-    axes[0].set_xlabel("Test ROC AUC")
-    axes[0].set_xlim(0.60, 0.72)
+    axes["ranking"].bar_label(ranking_bars, fmt="%.3f", padding=4, fontsize=9)
+    axes["ranking"].set_title("(a) Model ranking on the test set")
+    axes["ranking"].set_xlabel("ROC AUC")
+    axes["ranking"].set_xlim(0.60, 0.72)
 
     upper = 1.05 * max(
         risk_groups["observed_default_rate"].max(),
         risk_groups["mean_predicted_probability"].max(),
     )
-    axes[1].plot(
+    axes["risk"].plot(
         risk_groups["mean_predicted_probability"],
         risk_groups["observed_default_rate"],
         marker="o",
         color="#0072B2",
     )
-    axes[1].plot([0, upper], [0, upper], "k--")
-    axes[1].set_xlabel("Predicted probability")
-    axes[1].set_ylabel("Observed default rate")
-    axes[1].set_title("Risk groups")
+    axes["risk"].plot([0, upper], [0, upper], "k--", linewidth=1)
+    axes["risk"].set_xlabel("Mean predicted probability")
+    axes["risk"].set_ylabel("Observed default rate")
+    axes["risk"].set_title("(b) Ten probability groups")
+    axes["risk"].xaxis.set_major_formatter(PercentFormatter(1.0))
+    axes["risk"].yaxis.set_major_formatter(PercentFormatter(1.0))
 
     positions = np.arange(len(countries))
     width = 0.36
-    axes[2].bar(
+    observed_bars = axes["country"].bar(
         positions - width / 2,
         countries["observed_default_rate"],
         width,
         label="Observed",
         color="0.55",
     )
-    axes[2].bar(
+    predicted_bars = axes["country"].bar(
         positions + width / 2,
         countries["mean_predicted_probability"],
         width,
         label="Predicted",
         color="#0072B2",
     )
-    axes[2].set_xticks(positions, countries["group"], rotation=20)
-    axes[2].set_ylabel("Default rate")
-    axes[2].set_title("Country check")
-    axes[2].legend()
+    axes["country"].bar_label(
+        observed_bars,
+        labels=[f"{value:.1%}" for value in countries["observed_default_rate"]],
+        padding=2,
+        fontsize=8,
+    )
+    axes["country"].bar_label(
+        predicted_bars,
+        labels=[
+            f"{value:.1%}" for value in countries["mean_predicted_probability"]
+        ],
+        padding=2,
+        fontsize=8,
+    )
+    axes["country"].set_xticks(positions, countries["group"], rotation=15)
+    axes["country"].set_ylabel("Default rate")
+    axes["country"].set_title("(c) Country check")
+    axes["country"].yaxis.set_major_formatter(PercentFormatter(1.0))
+    axes["country"].legend(frameon=False)
 
-    fig.tight_layout()
     fig.savefig(FIGURE)
     plt.close(fig)
 
