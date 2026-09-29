@@ -17,10 +17,10 @@ Reuse terms: https://www.bundesbank.de/en/homepage/user-information/terms-of-use
 
 ## Go & Grow
 
-The credit project uses the public Go & Grow loan dataset. The original workbook is
-not included in this repository. `credit_risk/analysis.py` downloads it from the
-publisher when it is absent. Users remain responsible for complying with the
-publisher's current terms.
+The credit project uses the public Go & Grow loan dataset. The original workbook
+and prepared `credit_data.xlsx` are excluded from Git. `credit_risk/prepare_data.py`
+downloads the source when missing and prepares the notebook input locally.
+Users remain responsible for complying with the publisher's current terms.
 
 Dataset page: https://goandgrow.eu/en/public-statistics/
 

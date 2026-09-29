@@ -1,9 +1,13 @@
 .venv/
 __pycache__/
 *.pyc
+.ipynb_checkpoints/
 
 # Local report source and generated figures
 extras/
 
 # Downloaded third-party credit data
 credit_risk/loan_dataset_investor.xlsx
+credit_risk/loan_dataset_investor.xlsx.part
+credit_risk/credit_data.xlsx
+credit_risk/credit_data.part.xlsx
